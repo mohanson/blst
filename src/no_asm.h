@@ -6,10 +6,47 @@
 
 #if LIMB_T_BITS==32
 typedef unsigned long long llimb_t;
+#elif LIMB_T_BITS==64
+typedef unsigned __int128 llimb_t;
 #endif
 
 #if defined(__clang__)
 # pragma GCC diagnostic ignored "-Wstatic-in-inline"
+#endif
+
+#if defined(__CKB_ASM_RVV__)
+const limb_t BLS12_381_P__U512[32] = {
+    0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+    0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a, 0x0000000000000000, 0x0000000000000000,
+    0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+    0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a, 0x0000000000000000, 0x0000000000000000,
+    0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+    0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a, 0x0000000000000000, 0x0000000000000000,
+    0xb9feffffffffaaab, 0x1eabfffeb153ffff, 0x6730d2a0f6b0f624, 0x64774b84f38512bf,
+    0x4b1ba7b6434bacd7, 0x1a0111ea397fe69a, 0x0000000000000000, 0x0000000000000000};
+
+const limb_t BLS12_381_N0_U512[32] = {
+    0x89f3fffcfffcfffd, 0x286adb92d9d113e8, 0x16ef2ef0c8e30b48, 0x19ecca0e8eb2db4c,
+    0x68b316fee268cf58, 0xceb06106feaafc94, 0x0000000000000000, 0x0000000000000000,
+    0x89f3fffcfffcfffd, 0x286adb92d9d113e8, 0x16ef2ef0c8e30b48, 0x19ecca0e8eb2db4c,
+    0x68b316fee268cf58, 0xceb06106feaafc94, 0x0000000000000000, 0x0000000000000000,
+    0x89f3fffcfffcfffd, 0x286adb92d9d113e8, 0x16ef2ef0c8e30b48, 0x19ecca0e8eb2db4c,
+    0x68b316fee268cf58, 0xceb06106feaafc94, 0x0000000000000000, 0x0000000000000000,
+    0x89f3fffcfffcfffd, 0x286adb92d9d113e8, 0x16ef2ef0c8e30b48, 0x19ecca0e8eb2db4c,
+    0x68b316fee268cf58, 0xceb06106feaafc94, 0x0000000000000000, 0x0000000000000000};
+
+static limb_t RVV_BUF0[32] = {};
+static limb_t RVV_BUF1[32] = {};
+static limb_t RVV_BUF2[32] = {};
+
+inline void six_copy(limb_t *dst, const limb_t *src) {
+  *(dst + 0) = *(src + 0);
+  *(dst + 1) = *(src + 1);
+  *(dst + 2) = *(src + 2);
+  *(dst + 3) = *(src + 3);
+  *(dst + 4) = *(src + 4);
+  *(dst + 5) = *(src + 5);
+}
 #endif
 
 static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
@@ -83,7 +120,31 @@ inline void sqr_mont_##bits(vec##bits ret, const vec##bits a, \
 MUL_MONT_IMPL(256)
 #undef mul_mont_256
 #undef sqr_mont_256
+
+#if defined(__CKB_ASM_IMC__)
+void mul_mont_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, limb_t n0);
+
+inline void sqr_mont_384(vec384 ret, const vec384 a, const vec384 p, limb_t n0) {
+  mul_mont_384(ret, a, a, p, n0);
+}
+#elif defined(__CKB_ASM_RVV__)
+void mul_mont_384_batch(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t n[], const limb_t np1[],
+                        const uint64_t size);
+
+inline void mul_mont_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, const limb_t n0) {
+  const limb_t A[8] = {a[0], a[1], a[2], a[3], a[4], a[5], 0, 0};
+  const limb_t B[8] = {b[0], b[1], b[2], b[3], b[4], b[5], 0, 0};
+  mul_mont_384_batch(RVV_BUF0, A, B, BLS12_381_P__U512, BLS12_381_N0_U512, 1);
+  six_copy(&ret[0], &RVV_BUF0[0]);
+}
+
+inline void sqr_mont_384(vec384 ret, const vec384 a, const vec384 p,
+                         limb_t n0) {
+  mul_mont_384(ret, a, a, p, n0);
+}
+#else
 MUL_MONT_IMPL(384)
+#endif
 
 static void add_mod_n(limb_t ret[], const limb_t a[], const limb_t b[],
                       const limb_t p[], size_t n)
@@ -525,20 +586,38 @@ inline limb_t sgn0_pty_mont_384x(const vec384x a, const vec384 p, limb_t n0)
     return sgn0_pty_mod_384x(tmp, p);
 }
 
-void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b,
-                          const vec384 p, limb_t n0)
-{
-    vec384 aa, bb, cc;
-
-    add_mod_n(aa, a[0], a[1], p, NLIMBS(384));
-    add_mod_n(bb, b[0], b[1], p, NLIMBS(384));
-    mul_mont_n(bb, bb, aa, p, n0, NLIMBS(384));
-    mul_mont_n(aa, a[0], b[0], p, n0, NLIMBS(384));
-    mul_mont_n(cc, a[1], b[1], p, n0, NLIMBS(384));
-    sub_mod_n(ret[0], aa, cc, p, NLIMBS(384));
-    sub_mod_n(ret[1], bb, aa, p, NLIMBS(384));
-    sub_mod_n(ret[1], ret[1], cc, p, NLIMBS(384));
+#if defined(__CKB_ASM_IMC__)
+void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0);
+#elif defined(__CKB_ASM_RVV__)
+void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
+    /* a[0] * b[0] - a[1] * b[1] */
+    /* a[0] * b[1] + a[1] * b[0] */
+    six_copy(&RVV_BUF1[0x00], &a[0][0]);
+    six_copy(&RVV_BUF1[0x08], &a[1][0]);
+    six_copy(&RVV_BUF1[0x10], &a[0][0]);
+    six_copy(&RVV_BUF1[0x18], &a[1][0]);
+    six_copy(&RVV_BUF2[0x00], &b[0][0]);
+    six_copy(&RVV_BUF2[0x08], &b[1][0]);
+    six_copy(&RVV_BUF2[0x10], &b[1][0]);
+    six_copy(&RVV_BUF2[0x18], &b[0][0]);
+    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, BLS12_381_P__U512, BLS12_381_N0_U512, 4);
+    sub_mod_n(ret[0], &RVV_BUF0[0x00], &RVV_BUF0[0x08], p, NLIMBS(384));
+    add_mod_n(ret[1], &RVV_BUF0[0x10], &RVV_BUF0[0x18], p, NLIMBS(384));
 }
+#else
+void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
+  vec384 aa, bb, cc;
+
+  add_mod_n(aa, a[0], a[1], p, NLIMBS(384));
+  add_mod_n(bb, b[0], b[1], p, NLIMBS(384));
+  mul_mont_384(bb, bb, aa, p, n0);
+  mul_mont_384(aa, a[0], b[0], p, n0);
+  mul_mont_384(cc, a[1], b[1], p, n0);
+  sub_mod_n(ret[0], aa, cc, p, NLIMBS(384));
+  sub_mod_n(ret[1], bb, aa, p, NLIMBS(384));
+  sub_mod_n(ret[1], ret[1], cc, p, NLIMBS(384));
+}
+#endif
 
 /*
  * mul_mont_n without final conditional subtraction, which implies

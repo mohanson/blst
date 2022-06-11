@@ -7,6 +7,7 @@
 #define __BLS12_381_ASM_VECT_H__
 
 #include <stddef.h>
+#include <stdint.h>
 
 #if defined(__x86_64__) || defined(__aarch64__)
 /* These are available even in ILP32 flavours, but even then they are
@@ -19,8 +20,8 @@ typedef unsigned __int64 limb_t;
 # define LIMB_T_BITS    64
 
 #elif defined(__BLST_NO_ASM__) || defined(__wasm64__)
-typedef unsigned int limb_t;
-# define LIMB_T_BITS    32
+typedef uint64_t limb_t;
+# define LIMB_T_BITS    64
 # ifndef __BLST_NO_ASM__
 #  define __BLST_NO_ASM__
 # endif

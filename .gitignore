@@ -57,7 +57,7 @@ dkms.conf
 # Emacs backup files
 *~
 
-# Rust build 
+# Rust build
 Cargo.lock
 bindings/rust/target
 bindings/rust/blst
@@ -66,3 +66,5 @@ bindings/rust/blst
 bindings/python
 bindings/java
 bindings/node.js
+
+bin
