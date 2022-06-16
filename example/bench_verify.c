@@ -37,6 +37,7 @@ int once() {
 }
 
 int main(int argc, const char *argv[]) {
+  blst_init();
   int n = atoi(argv[1]);
   for (int i = 0; i < n; i++) {
     if (once() != 0) {

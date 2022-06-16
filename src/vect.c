@@ -132,7 +132,7 @@ void sqr_mont_384x(vec384x ret, const vec384x a, const vec384 mod, limb_t n0)
     six_copy(&RVV_BUF1[8], &t0[0]);
     six_copy(&RVV_BUF2[0], &a[1][0]);
     six_copy(&RVV_BUF2[8], &t1[0]);
-    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, BLS12_381_P__U512, BLS12_381_N0_U512, 2);
+    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, 2);
     six_copy(&ret[1][0], &RVV_BUF0[0]);
     six_copy(&ret[0][0], &RVV_BUF0[8]);
 #else

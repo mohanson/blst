@@ -49,6 +49,16 @@ inline void six_copy(limb_t *dst, const limb_t *src) {
 }
 #endif
 
+#if defined(__CKB_ASM_RVV__)
+void rvv_preload(const limb_t v30[], const limb_t v31[]);
+
+void blst_init() {
+    rvv_preload(BLS12_381_P__U512, BLS12_381_N0_U512);
+}
+#else
+void blst_init() {}
+#endif
+
 static void mul_mont_n(limb_t ret[], const limb_t a[], const limb_t b[],
                        const limb_t p[], limb_t n0, size_t n)
 {
@@ -128,13 +138,12 @@ inline void sqr_mont_384(vec384 ret, const vec384 a, const vec384 p, limb_t n0) 
   mul_mont_384(ret, a, a, p, n0);
 }
 #elif defined(__CKB_ASM_RVV__)
-void mul_mont_384_batch(limb_t ret[], const limb_t a[], const limb_t b[], const limb_t n[], const limb_t np1[],
-                        const uint64_t size);
+void mul_mont_384_batch(limb_t ret[], const limb_t a[], const limb_t b[], const uint64_t size);
 
-inline void mul_mont_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, const limb_t n0) {
+void mul_mont_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, const limb_t n0) {
   const limb_t A[8] = {a[0], a[1], a[2], a[3], a[4], a[5], 0, 0};
   const limb_t B[8] = {b[0], b[1], b[2], b[3], b[4], b[5], 0, 0};
-  mul_mont_384_batch(RVV_BUF0, A, B, BLS12_381_P__U512, BLS12_381_N0_U512, 1);
+  mul_mont_384_batch(RVV_BUF0, A, B, 1);
   six_copy(&ret[0], &RVV_BUF0[0]);
 }
 
@@ -600,7 +609,7 @@ void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p
     six_copy(&RVV_BUF2[0x08], &b[1][0]);
     six_copy(&RVV_BUF2[0x10], &b[1][0]);
     six_copy(&RVV_BUF2[0x18], &b[0][0]);
-    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, BLS12_381_P__U512, BLS12_381_N0_U512, 4);
+    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, 4);
     sub_mod_n(ret[0], &RVV_BUF0[0x00], &RVV_BUF0[0x08], p, NLIMBS(384));
     add_mod_n(ret[1], &RVV_BUF0[0x10], &RVV_BUF0[0x18], p, NLIMBS(384));
 }
