@@ -10,6 +10,10 @@ x86:
 	gcc $(CFLAGS) -c -D__BLST_NO_ASM__ -o bin/server.o src/server.c
 	gcc $(CFLAGS) -Ibindings -o bin/bench_verify_x86 example/bench_verify.c bin/server.o
 
+x86-asm:
+	sh build.sh
+	gcc $(CFLAGS) -Ibindings -o bin/bench_verify_x86 example/bench_verify.c libblst.a
+
 raw:
 	$(CC) $(CFLAGS) -c -D__BLST_NO_ASM__ -o bin/server.o src/server.c
 	$(CC) $(CFLAGS) -Ibindings -o bin/bench_verify_raw example/bench_verify.c bin/server.o

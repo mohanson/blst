@@ -8,6 +8,8 @@
 
 #ifdef __BLST_NO_ASM__
 # include "no_asm.h"
+#else
+void blst_init() {}
 #endif
 
 /*
