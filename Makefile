@@ -1,4 +1,4 @@
-TARGET := /home/ubuntu/app/riscv/bin/riscv64-unknown-elf
+TARGET := riscv64-unknown-elf
 CC := $(TARGET)-gcc
 CFLAGS := -fPIC -O3
 # https://crates.io/crates/rvv-as
@@ -12,7 +12,7 @@ x86:
 
 x86-asm:
 	sh build.sh
-	gcc $(CFLAGS) -Ibindings -o bin/bench_verify_x86 example/bench_verify.c libblst.a
+	gcc $(CFLAGS) -Ibindings -o bin/bench_verify_x86_asm example/bench_verify.c libblst.a
 
 raw:
 	$(CC) $(CFLAGS) -c -D__BLST_NO_ASM__ -o bin/server.o src/server.c
@@ -36,6 +36,9 @@ rvv: asm
 
 run-x86: x86
 	time bin/bench_verify_x86 100
+
+run-x86-asm: x86-asm
+	time bin/bench_verify_x86_asm 100
 
 run-raw: raw
 	time $(RUNNER) bin/bench_verify_raw 0 100
