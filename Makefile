@@ -4,7 +4,7 @@ CFLAGS := -fPIC -O3
 # https://crates.io/crates/rvv-as
 RVV_AS := rvv-as
 # https://github.com/nervosnetwork/ckb-vm/tree/rvv
-RUNNER := ~/src/ckb-vm/target/release/examples/asm64
+RUNNER := ~/src/ckb-vm/target/release/examples/ckb-vm-runner
 
 x86:
 	gcc $(CFLAGS) -c -D__BLST_NO_ASM__ -o bin/server.o src/server.c
