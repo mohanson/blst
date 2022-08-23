@@ -23,6 +23,8 @@ asm:
 	$(CC) $(CFLAGS) -c -o bin/mul_mont_384x-riscv.o build/riscv/mul_mont_384x-riscv.S
 	$(RVV_AS) build/riscv/mul_mont_384_batch-riscv.S > bin/mul_mont_384_batch-riscv.S
 	$(CC) $(CFLAGS) -c -o bin/mul_mont_384_batch-riscv.o bin/mul_mont_384_batch-riscv.S
+	$(RVV_AS) build/riscv/mul_mont_nonred_384_batch-riscv.S > bin/mul_mont_nonred_384_batch-riscv.S
+	$(CC) $(CFLAGS) -c -o bin/mul_mont_nonred_384_batch-riscv.o bin/mul_mont_nonred_384_batch-riscv.S
 	$(RVV_AS) build/riscv/rvv_preload.S > bin/rvv_preload.S
 	$(CC) $(CFLAGS) -c -o bin/rvv_preload.o bin/rvv_preload.S
 
@@ -32,7 +34,7 @@ imc: asm
 
 rvv: asm
 	$(CC) $(CFLAGS) -c -D__BLST_NO_ASM__ -D__CKB_ASM_RVV__ -o bin/server.o src/server.c
-	$(CC) $(CFLAGS) -Ibindings -o bin/bench_verify_rvv example/bench_verify.c bin/server.o bin/mul_mont_384_batch-riscv.o bin/rvv_preload.o
+	$(CC) $(CFLAGS) -Ibindings -o bin/bench_verify_rvv example/bench_verify.c bin/server.o bin/mul_mont_384_batch-riscv.o bin/mul_mont_nonred_384_batch-riscv.o bin/rvv_preload.o
 
 run-x86: x86
 	time bin/bench_verify_x86 100

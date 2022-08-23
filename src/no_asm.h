@@ -152,11 +152,19 @@ inline void sqr_mont_384(vec384 ret, const vec384 a, const vec384 p, limb_t n0) 
 }
 #elif defined(__CKB_ASM_RVV__)
 void mul_mont_384_batch(limb_t ret[], const limb_t a[], const limb_t b[], const uint64_t size);
+void mul_mont_nonred_384_batch(limb_t ret[], const limb_t a[], const limb_t b[], const uint64_t size);
 
 void mul_mont_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, const limb_t n0) {
   const limb_t A[8] = {a[0], a[1], a[2], a[3], a[4], a[5], 0, 0};
   const limb_t B[8] = {b[0], b[1], b[2], b[3], b[4], b[5], 0, 0};
   mul_mont_384_batch(RVV_BUF0, A, B, 1);
+  six_copy(&ret[0], &RVV_BUF0[0]);
+}
+
+void mul_mont_nonred_384(vec384 ret, const vec384 a, const vec384 b, const vec384 p, const limb_t n0) {
+  const limb_t A[8] = {a[0], a[1], a[2], a[3], a[4], a[5], 0, 0};
+  const limb_t B[8] = {b[0], b[1], b[2], b[3], b[4], b[5], 0, 0};
+  mul_mont_nonred_384_batch(RVV_BUF0, A, B, 1);
   six_copy(&ret[0], &RVV_BUF0[0]);
 }
 
@@ -686,6 +694,17 @@ static void mul_mont_nonred_n(limb_t ret[], const limb_t a[], const limb_t b[],
     vec_copy(ret, tmp, sizeof(tmp)-sizeof(limb_t));
 }
 
+#if defined(__CKB_ASM_RVV__)
+void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
+                        const vec384 p, limb_t n0, const vec384 b)
+{
+    while(count--) {
+        mul_mont_nonred_384(ret, a, a, p, n0);
+        a = ret;
+    }
+    mul_mont_384(ret, ret, b, p, n0);
+}
+#else
 void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
                         const vec384 p, limb_t n0, const vec384 b)
 {
@@ -695,6 +714,7 @@ void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
     }
     mul_mont_n(ret, ret, b, p, n0, NLIMBS(384));
 }
+#endif
 
 void sqr_mont_382x(vec384x ret, const vec384x a,
                           const vec384 p, limb_t n0)
@@ -720,7 +740,11 @@ void sqr_mont_382x(vec384x ret, const vec384x a,
     mask = 0 - borrow;
 
     /* "mul_mont_n(ret[1], a[0], a[1], p, n0, NLIMBS(384));" */
+#if defined(__CKB_ASM_RVV__)
+    mul_mont_nonred_384(ret[1], a[0], a[1], p, n0);
+#else
     mul_mont_nonred_n(ret[1], a[0], a[1], p, n0, NLIMBS(384));
+#endif
 
     /* "add_mod_n(ret[1], ret[1], ret[1], p, NLIMBS(384));" */
     for (carry=0, i=0; i<NLIMBS(384); i++) {
@@ -730,7 +754,11 @@ void sqr_mont_382x(vec384x ret, const vec384x a,
     }
 
     /* "mul_mont_n(ret[0], t0, t1, p, n0, NLIMBS(384));" */
+#if defined(__CKB_ASM_RVV__)
+    mul_mont_nonred_384(ret[0], t0, t1, p, n0);
+#else
     mul_mont_nonred_n(ret[0], t0, t1, p, n0, NLIMBS(384));
+#endif
 
     /* account for t1's sign... */
     for (borrow=0, i=0; i<NLIMBS(384); i++) {
