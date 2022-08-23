@@ -20,13 +20,10 @@ mul_mont_384_batch:
 
   // m = (T * N⁻¹) % R
   vnsrl.wx v0, v2, zero // v0 -> T % 2^512
-  li t1, 128
-  vsll.vx v0, v0, t1
-  vsrl.vx v0, v0, t1    // v0 -> T % 2^384
+  vand.vv v0, v0, v29   // v0 -> T % 2^384
   vwmulu.vv v4, v0, v31
   vnsrl.wx v0, v4, zero
-  vsll.vx v0, v0, t1
-  vsrl.vx v0, v0, t1    // v0 -> m
+  vand.vv v0, v0, v29   // v0 -> m
 
   // t = (T + m * N) / R
   vwmaccu.vv v2, v0, v30

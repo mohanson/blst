@@ -35,6 +35,16 @@ const limb_t BLS12_381_N0_U512[32] = {
     0x89f3fffcfffcfffd, 0x286adb92d9d113e8, 0x16ef2ef0c8e30b48, 0x19ecca0e8eb2db4c,
     0x68b316fee268cf58, 0xceb06106feaafc94, 0x0000000000000000, 0x0000000000000000};
 
+const limb_t U384_MASKER[32] = {
+    0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
+    0xffffffffffffffff, 0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
+    0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
+    0xffffffffffffffff, 0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
+    0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
+    0xffffffffffffffff, 0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000,
+    0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff, 0xffffffffffffffff,
+    0xffffffffffffffff, 0xffffffffffffffff, 0x0000000000000000, 0x0000000000000000};
+
 static limb_t RVV_BUF0[32] = {};
 static limb_t RVV_BUF1[32] = {};
 static limb_t RVV_BUF2[32] = {};
@@ -50,10 +60,13 @@ inline void six_copy(limb_t *dst, const limb_t *src) {
 #endif
 
 #if defined(__CKB_ASM_RVV__)
-void rvv_preload(const limb_t v30[], const limb_t v31[]);
+void rvv_preload(const limb_t v30[], const limb_t v31[], const limb_t v29[]);
 
 void blst_init() {
-    rvv_preload(BLS12_381_P__U512, BLS12_381_N0_U512);
+    rvv_preload(
+        BLS12_381_P__U512,
+        BLS12_381_N0_U512,
+        U384_MASKER);
 }
 #else
 void blst_init() {}
