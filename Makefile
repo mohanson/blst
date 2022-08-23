@@ -47,9 +47,4 @@ run-imc: imc
 	time $(RUNNER) bin/bench_verify_imc 0 100
 
 run-rvv: rvv
-	cd ~/src/ckb-vm && cargo build --features=asm --example ckb-vm-runner --release
 	time $(RUNNER) bin/bench_verify_rvv 0 100
-
-run-trace:
-	cd ~/src/ckb-vm && cargo build --features=asm,aot --example asm64_vtrace --release
-	time ~/src/ckb-vm/target/release/examples/asm64_vtrace bin/bench_verify_rvv 0 100

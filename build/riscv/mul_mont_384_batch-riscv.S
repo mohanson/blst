@@ -7,6 +7,7 @@
 //   a2: y
 //   a3: size
 // Envs:
+//   v29: u384 mask
 //   v30: N
 //   v31: N⁻¹
 mul_mont_384_batch:
@@ -20,10 +21,8 @@ mul_mont_384_batch:
 
   // m = (T * N⁻¹) % R
   vnsrl.wx v0, v2, zero // v0 -> T % 2^512
-  vand.vv v0, v0, v29   // v0 -> T % 2^384
-  vwmulu.vv v4, v0, v31
-  vnsrl.wx v0, v4, zero
-  vand.vv v0, v0, v29   // v0 -> m
+  vmul.vv v4, v0, v31   // v4 -> T * N⁻¹
+  vand.vv v0, v4, v29   // v0 -> m
 
   // t = (T + m * N) / R
   vwmaccu.vv v2, v0, v30
