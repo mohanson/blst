@@ -23,6 +23,8 @@ asm:
 	$(CC) $(CFLAGS) -c -o bin/mul_mont_384x-riscv.o build/riscv/mul_mont_384x-riscv.S
 	$(RVV_AS) build/riscv/mul_mont_384_batch-riscv.S > bin/mul_mont_384_batch-riscv.S
 	$(CC) $(CFLAGS) -c -o bin/mul_mont_384_batch-riscv.o bin/mul_mont_384_batch-riscv.S
+	$(RVV_AS) build/riscv/mul_mont_384x_rvv-riscv.S > bin/mul_mont_384x_rvv-riscv.S
+	$(CC) $(CFLAGS) -c -o bin/mul_mont_384x_rvv-riscv.o bin/mul_mont_384x_rvv-riscv.S
 	$(RVV_AS) build/riscv/mul_mont_nonred_384_batch-riscv.S > bin/mul_mont_nonred_384_batch-riscv.S
 	$(CC) $(CFLAGS) -c -o bin/mul_mont_nonred_384_batch-riscv.o bin/mul_mont_nonred_384_batch-riscv.S
 	$(RVV_AS) build/riscv/sqr_mont_384x-riscv.S > bin/sqr_mont_384x-riscv.S
@@ -41,6 +43,7 @@ rvv: asm
 	$(CC) $(CFLAGS) -Ibindings -o bin/bench_verify_rvv example/bench_verify.c \
 		bin/server.o \
 		bin/mul_mont_384_batch-riscv.o \
+		bin/mul_mont_384x_rvv-riscv.o \
 		bin/mul_mont_nonred_384_batch-riscv.o \
 		bin/sqr_mont_384x-riscv.o \
 		bin/sqr_n_mul_mont_383-riscv.o \

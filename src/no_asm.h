@@ -619,21 +619,53 @@ inline limb_t sgn0_pty_mont_384x(const vec384x a, const vec384 p, limb_t n0)
 #if defined(__CKB_ASM_IMC__)
 void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0);
 #elif defined(__CKB_ASM_RVV__)
+// void mul_mont_384x_rvv(limb_t ret0[], limb_t ret1[], const limb_t a0[], const limb_t a1[], const limb_t b0[], const limb_t b1[]);
+
+// void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
+//     const limb_t A0[8] = {a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], 0, 0};
+//     const limb_t A1[8] = {a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], 0, 0};
+//     const limb_t B0[8] = {b[0][0], b[0][1], b[0][2], b[0][3], b[0][4], b[0][5], 0, 0};
+//     const limb_t B1[8] = {b[1][0], b[1][1], b[1][2], b[1][3], b[1][4], b[1][5], 0, 0};
+//     mul_mont_384x_rvv(RVV_BUF0, RVV_BUF1, A0, A1, B0, B1);
+//     six_copy(&ret[0][0], &RVV_BUF0[0]);
+//     six_copy(&ret[1][0], &RVV_BUF1[0]);
+// }
+
+void mul_mont_384x_rvv(limb_t ret0[], limb_t ret1[], const limb_t a[], const limb_t b[]);
+
 void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
-    /* a[0] * b[0] - a[1] * b[1] */
-    /* a[0] * b[1] + a[1] * b[0] */
-    six_copy(&RVV_BUF1[0x00], &a[0][0]);
-    six_copy(&RVV_BUF1[0x08], &a[1][0]);
-    six_copy(&RVV_BUF1[0x10], &a[0][0]);
-    six_copy(&RVV_BUF1[0x18], &a[1][0]);
-    six_copy(&RVV_BUF2[0x00], &b[0][0]);
-    six_copy(&RVV_BUF2[0x08], &b[1][0]);
-    six_copy(&RVV_BUF2[0x10], &b[1][0]);
-    six_copy(&RVV_BUF2[0x18], &b[0][0]);
-    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, 4);
-    sub_mod_n(ret[0], &RVV_BUF0[0x00], &RVV_BUF0[0x08], p, NLIMBS(384));
-    add_mod_n(ret[1], &RVV_BUF0[0x10], &RVV_BUF0[0x18], p, NLIMBS(384));
+    const limb_t A[32] = {
+        a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], 0, 0,
+        a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], 0, 0,
+        a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], 0, 0,
+        a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], 0, 0
+    };
+    const limb_t B[32] = {
+        b[0][0], b[0][1], b[0][2], b[0][3], b[0][4], b[0][5], 0, 0,
+        b[1][0], b[1][1], b[1][2], b[1][3], b[1][4], b[1][5], 0, 0,
+        b[1][0], b[1][1], b[1][2], b[1][3], b[1][4], b[1][5], 0, 0,
+        b[0][0], b[0][1], b[0][2], b[0][3], b[0][4], b[0][5], 0, 0
+    };
+    mul_mont_384x_rvv(RVV_BUF0, RVV_BUF1, A, B);
+    six_copy(&ret[0][0], &RVV_BUF0[0]);
+    six_copy(&ret[1][0], &RVV_BUF1[0]);
 }
+
+// void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
+//     /* a[0] * b[0] - a[1] * b[1] */
+//     /* a[0] * b[1] + a[1] * b[0] */
+//     six_copy(&RVV_BUF1[0x00], &a[0][0]);
+//     six_copy(&RVV_BUF1[0x08], &a[1][0]);
+//     six_copy(&RVV_BUF1[0x10], &a[0][0]);
+//     six_copy(&RVV_BUF1[0x18], &a[1][0]);
+//     six_copy(&RVV_BUF2[0x00], &b[0][0]);
+//     six_copy(&RVV_BUF2[0x08], &b[1][0]);
+//     six_copy(&RVV_BUF2[0x10], &b[1][0]);
+//     six_copy(&RVV_BUF2[0x18], &b[0][0]);
+//     mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, 4);
+//     sub_mod_n(ret[0], &RVV_BUF0[0x00], &RVV_BUF0[0x08], p, NLIMBS(384));
+//     add_mod_n(ret[1], &RVV_BUF0[0x10], &RVV_BUF0[0x18], p, NLIMBS(384));
+// }
 #else
 void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b, const vec384 p, limb_t n0) {
   vec384 aa, bb, cc;
