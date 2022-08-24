@@ -122,6 +122,17 @@ void mul_mont_384x(vec384x ret, const vec384x a, const vec384x b,
 #endif
 
 #if defined(sqr_mont_384x) && !(defined(__ADX__) && !defined(__BLST_PORTABLE__))
+#if defined(__CKB_ASM_RVV__)
+void sqr_mont_384x_rvv(limb_t ret0[], limb_t ret1[], const limb_t a0[], const limb_t a1[]);
+
+void sqr_mont_384x(vec384x ret, const vec384x a, const vec384 mod, limb_t n0) {
+    const limb_t A0[8] = {a[0][0], a[0][1], a[0][2], a[0][3], a[0][4], a[0][5], 0, 0};
+    const limb_t A1[8] = {a[1][0], a[1][1], a[1][2], a[1][3], a[1][4], a[1][5], 0, 0};
+    sqr_mont_384x_rvv(RVV_BUF0, RVV_BUF1, A0, A1);
+    six_copy(&ret[0][0], &RVV_BUF0[0]);
+    six_copy(&ret[1][0], &RVV_BUF1[0]);
+}
+#else
 void sqr_mont_384x(vec384x ret, const vec384x a, const vec384 mod, limb_t n0)
 {
     vec384 t0, t1;
@@ -129,20 +140,12 @@ void sqr_mont_384x(vec384x ret, const vec384x a, const vec384 mod, limb_t n0)
     add_mod_384(t0, a[0], a[1], mod);
     sub_mod_384(t1, a[0], a[1], mod);
 
-#if defined(__CKB_ASM_RVV__)
-    six_copy(&RVV_BUF1[0], &a[0][0]);
-    six_copy(&RVV_BUF1[8], &t0[0]);
-    six_copy(&RVV_BUF2[0], &a[1][0]);
-    six_copy(&RVV_BUF2[8], &t1[0]);
-    mul_mont_384_batch(RVV_BUF0, RVV_BUF1, RVV_BUF2, 2);
-    six_copy(&ret[1][0], &RVV_BUF0[0]);
-    six_copy(&ret[0][0], &RVV_BUF0[8]);
-#else
     mul_mont_384(ret[1], a[0], a[1], mod, n0);
-    mul_mont_384(ret[0], t0, t1, mod, n0);
-#endif
     add_mod_384(ret[1], ret[1], ret[1], mod);
+
+    mul_mont_384(ret[0], t0, t1, mod, n0);
 }
+#endif
 #endif
 
 limb_t div_3_limbs(const limb_t dividend_top[2], limb_t d_lo, limb_t d_hi);
