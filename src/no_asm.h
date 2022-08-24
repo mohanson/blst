@@ -695,14 +695,15 @@ static void mul_mont_nonred_n(limb_t ret[], const limb_t a[], const limb_t b[],
 }
 
 #if defined(__CKB_ASM_RVV__)
+void sqr_n_mul_mont_383_rvv(limb_t ret[], const limb_t a[], size_t count, const limb_t p[], limb_t n0, const limb_t b[]);
+
 void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
                         const vec384 p, limb_t n0, const vec384 b)
 {
-    while(count--) {
-        mul_mont_nonred_384(ret, a, a, p, n0);
-        a = ret;
-    }
-    mul_mont_384(ret, ret, b, p, n0);
+  const limb_t A[8] = {a[0], a[1], a[2], a[3], a[4], a[5], 0, 0};
+  const limb_t B[8] = {b[0], b[1], b[2], b[3], b[4], b[5], 0, 0};
+  sqr_n_mul_mont_383_rvv(RVV_BUF0, A, count, &p[0], n0, B);
+  six_copy(&ret[0], &RVV_BUF0[0]);
 }
 #else
 void sqr_n_mul_mont_383(vec384 ret, const vec384 a, size_t count,
